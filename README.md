@@ -114,29 +114,21 @@ rebar3 shell
 
 Hit `/health` from another terminal: `curl http://localhost:8080/health`.
 
-### 4. Deploy to Clever Cloud
+### 4. Deploy
 
-Triagebot ships a `Dockerfile`. Create a **Docker** application on
-Clever Cloud (not the native Erlang runtime); Clever detects the
-Dockerfile at the repo root, builds the image, and runs the container.
+Triagebot ships a multi-stage `Dockerfile` that produces a small,
+portable container. Build and run it anywhere a container runs:
 
 ```bash
-git remote add clever https://push.clever-cloud.com/<your-app-id>.git
-git push clever main
+docker build -t triagebot .
+docker run --rm \
+    -p 8080:8080 -p 9568:9568 \
+    --env-file .env \
+    triagebot
 ```
 
-Set the env vars from sections 2 above on the Clever app. No build-
-or run-command env vars are needed — they're encapsulated in the
-Dockerfile (`CMD ["bin/triagebot", "foreground"]`).
-
-Point your GitHub App webhook at
-`https://<your-app>.cleverapps.io/webhook/github` and you're live.
-
-If Clever's builder OOMs on the Erlang compile (it has a smaller
-memory ceiling than GitHub Actions), the asobi_site pattern is to
-build the image in GitHub Actions, push to GHCR, and have Clever's
-Dockerfile be a 1-line `FROM ghcr.io/...:latest` passthrough. Skip
-that complexity unless OOM actually bites.
+Point your GitHub App webhook at `https://<your-host>/webhook/github`.
+That's it.
 
 ## What's in v0.1
 

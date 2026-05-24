@@ -1,11 +1,8 @@
 # syntax=docker/dockerfile:1.7
 #
-# Multi-stage Dockerfile for triagebot. Mirrors the Taure/asobi_site
-# pattern; runtime image only carries the dynamic libs ERTS links
-# against (the prod release brings its own ERTS).
-#
-# Clever Cloud detects this file on a Docker-type app and runs the
-# resulting container directly.
+# Multi-stage Dockerfile for triagebot. Runtime image carries only the
+# dynamic libs ERTS links against; the prod release bundles its own
+# ERTS, so no Erlang install is needed at runtime.
 
 # --- build stage ---------------------------------------------------
 FROM erlang:28 AS builder
