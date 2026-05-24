@@ -32,9 +32,14 @@ system_prompt() ->
     Cross-cutting: spans several modules or requires design discussion.
     Unclear: not enough info to tell.
 
+    If the issue references a specific source file, use
+    `read_repo_file` to read it before scoring scope - one file
+    suggesting a tightly localised fix is often self-contained, while
+    a behaviour callback change ripples through every implementer.
+
     Be honest about uncertainty. Two lines, no commentary.
     """.
 
-tools() -> [].
+tools() -> [triagebot_repo_context_tool].
 
 model() -> triagebot_config:agent_model().

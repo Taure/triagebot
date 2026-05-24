@@ -18,7 +18,7 @@
   0},
  {<<"gakudan_tickets_github">>,
   {git,"https://github.com/Taure/gakudan_tickets_github.git",
-       {ref,"5d9ac1e423f59098e9d653ce6c7adc6c33975f6d"}},
+       {ref,"98b1f3284f8226cc9fc33abbbe9c5dd7a676d6f9"}},
   0},
  {<<"jhn_stdlib">>,{pkg,<<"jhn_stdlib">>,<<"5.11.2">>},1},
  {<<"nova">>,{pkg,<<"nova">>,<<"0.14.3">>},0},

@@ -18,8 +18,12 @@ When a GitHub Issue is opened or labeled, triagebot:
 2. Verifies the `X-Hub-Signature-256` HMAC against the shared secret.
 3. Hands the parsed issue to a five-agent gakudan pipeline:
    `classifier` → `scoper` → `dup_detector` → `label_proposer` → `summariser`.
-4. The `dup_detector` agent uses a `search_issues` tool to scan the repo
-   for likely duplicates.
+4. The `classifier` and `scoper` agents use a `read_repo_file` tool to
+   ground themselves in `CLAUDE.md`, `README.md`, or the source file an
+   issue links to. The `dup_detector` agent uses `search_issues` to
+   scan the repo for likely duplicates. The `label_proposer` picks
+   from the labels actually defined in the repo (fetched once at
+   startup).
 5. The `summariser` produces a structured Markdown comment that gets
    posted on the issue.
 6. The `label_proposer`'s output is parsed for label names and applied
@@ -133,13 +137,15 @@ That's it.
 ## What's in v0.1
 
 - Nova HTTP shell with webhook + health controllers
-- 5 agent modules + 1 search tool
+- 5 agent modules + 2 tools (`search_issues`, `read_repo_file`)
 - Spawn-and-forget async (BEAM process per webhook) so the response
   returns 202 immediately while triage runs in the background
-- GitHub App or PAT auth (via `gakudan_tickets_github` v0.1.1+)
+- GitHub App or PAT auth (via `gakudan_tickets_github` v0.1.2+)
+- Repo-context awareness: classifier + scoper can read repo files;
+  label_proposer picks from the repo's actual label taxonomy
 - Prometheus `/metrics` via `gakudan_metrics`
-- 15-case CT suite covering the runner helpers, agent callbacks, tool
-  shape
+- 20-case CT suite covering the runner helpers, agent callbacks, tool
+  shapes, and dynamic prompt building
 
 ## Roadmap
 

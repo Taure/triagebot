@@ -30,14 +30,18 @@ Optional:
                               gemini-2.5-flash for Gemini)
 """.
 
+-include_lib("kernel/include/logger.hrl").
+
 -export([setup/0]).
 -export([webhook_secret/0, github_source/0, llm_backend_spec/0, agent_model/0]).
 -export([port/0, metrics_port/0]).
+-export([repo_labels/0, refresh_repo_labels/0]).
 
 -define(SOURCE_KEY, {?MODULE, github_source}).
 -define(SECRET_KEY, {?MODULE, webhook_secret}).
 -define(LLM_KEY, {?MODULE, llm_backend_spec}).
 -define(MODEL_KEY, {?MODULE, agent_model}).
+-define(LABELS_KEY, {?MODULE, repo_labels}).
 
 -spec setup() -> ok.
 setup() ->
@@ -46,6 +50,7 @@ setup() ->
     {LlmSpec, Model} = resolve_llm(),
     persistent_term:put(?LLM_KEY, LlmSpec),
     persistent_term:put(?MODEL_KEY, Model),
+    persistent_term:put(?LABELS_KEY, fetch_repo_labels()),
     ok.
 
 -spec webhook_secret() -> binary().
@@ -78,6 +83,31 @@ metrics_port() ->
         false -> 9568;
         "" -> undefined;
         V -> list_to_integer(V)
+    end.
+
+-doc """
+Return the configured repo's labels (as fetched at startup). Each
+label is `#{name, description, color}`. Empty list if the fetch
+failed - the agents fall back to their built-in vocabulary in that
+case.
+""".
+-spec repo_labels() -> [#{name := binary(), description := binary(), color := binary()}].
+repo_labels() ->
+    persistent_term:get(?LABELS_KEY, []).
+
+-doc """
+Re-fetch the repo's labels from GitHub and update the cached value.
+Useful from a remote shell when the repo's label taxonomy changes
+between deploys.
+""".
+-spec refresh_repo_labels() -> ok | {error, term()}.
+refresh_repo_labels() ->
+    case do_fetch_repo_labels() of
+        {ok, Labels} ->
+            persistent_term:put(?LABELS_KEY, Labels),
+            ok;
+        {error, _} = Err ->
+            Err
     end.
 
 %% --- internal ---
@@ -134,6 +164,23 @@ must_env(Name) ->
         V when is_list(V), V =/= "" -> V;
         _ -> error({missing_env, Name})
     end.
+
+fetch_repo_labels() ->
+    case do_fetch_repo_labels() of
+        {ok, Labels} ->
+            Labels;
+        {error, Reason} ->
+            ?LOG_WARNING(#{
+                event => repo_labels_fetch_failed,
+                reason => Reason,
+                fallback => builtin_vocabulary
+            }),
+            []
+    end.
+
+do_fetch_repo_labels() ->
+    Source = persistent_term:get(?SOURCE_KEY),
+    gakudan_tickets_github:list_labels(Source).
 
 must_int_env(Name) ->
     list_to_integer(must_env(Name)).
