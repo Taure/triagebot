@@ -12,6 +12,10 @@ Returns:
   GitHub shouldn't retry).
 - 401 Unauthorized if the signature doesn't match.
 - 400 Bad Request on malformed payloads.
+
+Nova's `handle_status` does not accept a trailing `Req` in 3-tuple form;
+that slot is `ExtraHeaders :: map()`. We use the bare `{status, Code}`
+form to let Nova render with its own Req.
 """.
 
 -include_lib("kernel/include/logger.hrl").
@@ -27,12 +31,12 @@ github_event(Req) ->
     case gakudan_tickets_github:verify_signature(Secret, Sig, Body) of
         false ->
             ?LOG_WARNING(#{event => webhook_signature_invalid, delivery => Delivery}),
-            {status, 401, Req1};
+            {status, 401};
         true ->
-            handle_verified(EventType, Body, Delivery, Req1)
+            handle_verified(EventType, Body, Delivery)
     end.
 
-handle_verified(EventType, Body, Delivery, Req) ->
+handle_verified(EventType, Body, Delivery) ->
     case gakudan_tickets_github:parse_webhook(EventType, Body) of
         {ok, {Event, Ticket}} ->
             ?LOG_INFO(#{
@@ -43,11 +47,19 @@ handle_verified(EventType, Body, Delivery, Req) ->
                 ticket_id => maps:get(id, Ticket)
             }),
             ok = triagebot_runner:dispatch(Event, Ticket),
-            {status, 202, Req};
+            {status, 202};
         {error, {unsupported_event, _}} ->
-            ?LOG_INFO(#{event => webhook_unsupported, github_event => EventType, delivery => Delivery}),
-            {status, 200, Req};
+            ?LOG_INFO(#{
+                event => webhook_unsupported,
+                github_event => EventType,
+                delivery => Delivery
+            }),
+            {status, 200};
         {error, Reason} ->
-            ?LOG_WARNING(#{event => webhook_bad_payload, reason => Reason, delivery => Delivery}),
-            {status, 400, Req}
+            ?LOG_WARNING(#{
+                event => webhook_bad_payload,
+                reason => Reason,
+                delivery => Delivery
+            }),
+            {status, 400}
     end.
