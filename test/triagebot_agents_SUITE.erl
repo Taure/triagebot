@@ -4,10 +4,12 @@
 
 -export([all/0, init_per_suite/1, end_per_suite/1]).
 -export([
-    classifier_has_required_callbacks/1,
-    scoper_has_required_callbacks/1,
+    classifier_uses_repo_context_tool/1,
+    scoper_uses_repo_context_tool/1,
     dup_detector_uses_search_tool/1,
     label_proposer_has_required_callbacks/1,
+    label_proposer_prompt_includes_repo_labels_when_present/1,
+    label_proposer_prompt_falls_back_when_labels_empty/1,
     summariser_has_required_callbacks/1,
     all_agents_have_distinct_ids/1,
     all_system_prompts_non_empty/1
@@ -23,35 +25,63 @@
 
 all() ->
     [
-        classifier_has_required_callbacks,
-        scoper_has_required_callbacks,
+        classifier_uses_repo_context_tool,
+        scoper_uses_repo_context_tool,
         dup_detector_uses_search_tool,
         label_proposer_has_required_callbacks,
+        label_proposer_prompt_includes_repo_labels_when_present,
+        label_proposer_prompt_falls_back_when_labels_empty,
         summariser_has_required_callbacks,
         all_agents_have_distinct_ids,
         all_system_prompts_non_empty
     ].
 
 init_per_suite(Config) ->
-    %% agents call triagebot_config:agent_model() at runtime; seed it.
+    %% agents call triagebot_config:agent_model()/repo_labels() at
+    %% runtime; seed both.
     persistent_term:put({triagebot_config, agent_model}, ~"test-model"),
+    persistent_term:put({triagebot_config, repo_labels}, []),
     Config.
 
 end_per_suite(_Config) ->
     persistent_term:erase({triagebot_config, agent_model}),
+    persistent_term:erase({triagebot_config, repo_labels}),
     ok.
 
-classifier_has_required_callbacks(_Config) ->
-    assert_agent_callbacks(triagebot_classifier, classifier, []).
+classifier_uses_repo_context_tool(_Config) ->
+    assert_agent_callbacks(triagebot_classifier, classifier, [triagebot_repo_context_tool]).
 
-scoper_has_required_callbacks(_Config) ->
-    assert_agent_callbacks(triagebot_scoper, scoper, []).
+scoper_uses_repo_context_tool(_Config) ->
+    assert_agent_callbacks(triagebot_scoper, scoper, [triagebot_repo_context_tool]).
 
 dup_detector_uses_search_tool(_Config) ->
     assert_agent_callbacks(triagebot_dup_detector, dup_detector, [triagebot_search_tool]).
 
 label_proposer_has_required_callbacks(_Config) ->
     assert_agent_callbacks(triagebot_label_proposer, label_proposer, []).
+
+label_proposer_prompt_includes_repo_labels_when_present(_Config) ->
+    Labels = [
+        #{name => ~"bug", description => ~"Something is broken", color => ~"d73a4a"},
+        #{name => ~"docs", description => ~"", color => ~"0075ca"}
+    ],
+    persistent_term:put({triagebot_config, repo_labels}, Labels),
+    try
+        Prompt = triagebot_label_proposer:system_prompt(),
+        ?assert(binary:match(Prompt, ~"bug") =/= nomatch),
+        ?assert(binary:match(Prompt, ~"Something is broken") =/= nomatch),
+        ?assert(binary:match(Prompt, ~"docs") =/= nomatch),
+        ?assert(binary:match(Prompt, ~"defined in this repo") =/= nomatch),
+        ?assertEqual(nomatch, binary:match(Prompt, ~"could not be fetched"))
+    after
+        persistent_term:put({triagebot_config, repo_labels}, [])
+    end.
+
+label_proposer_prompt_falls_back_when_labels_empty(_Config) ->
+    persistent_term:put({triagebot_config, repo_labels}, []),
+    Prompt = triagebot_label_proposer:system_prompt(),
+    ?assert(binary:match(Prompt, ~"could not be fetched") =/= nomatch),
+    ?assert(binary:match(Prompt, ~"base vocabulary") =/= nomatch).
 
 summariser_has_required_callbacks(_Config) ->
     assert_agent_callbacks(triagebot_summariser, summariser, []).

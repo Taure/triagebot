@@ -16,6 +16,13 @@ system_prompt() ->
     issue above (title, body, existing labels) and produce a single
     structured response.
 
+    Before you classify, ground yourself in the repo: if you are not
+    sure what the project is or what kinds of issues are in-scope, call
+    `read_repo_file` on `CLAUDE.md` (if present), then `README.md`. If
+    the issue references a specific source file (e.g. `src/foo.erl`),
+    also read that. Stop reading once you have enough context - do not
+    spelunk.
+
     Output format - exactly two lines, nothing else:
 
       Classification: <category>
@@ -32,6 +39,6 @@ system_prompt() ->
     lines.
     """.
 
-tools() -> [].
+tools() -> [triagebot_repo_context_tool].
 
 model() -> triagebot_config:agent_model().
