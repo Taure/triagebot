@@ -114,20 +114,21 @@ rebar3 shell
 
 Hit `/health` from another terminal: `curl http://localhost:8080/health`.
 
-### 4. Deploy to Clever Cloud
+### 4. Deploy
 
-Clever Cloud has first-class Erlang support. Create an Erlang application,
-add the env vars above via the console, set Postgres add-on if you want
-v0.2 features, then:
+Triagebot ships a multi-stage `Dockerfile` that produces a small,
+portable container. Build and run it anywhere a container runs:
 
 ```bash
-git remote add clever https://push.clever-cloud.com/<your-app-id>.git
-git push clever main
+docker build -t triagebot .
+docker run --rm \
+    -p 8080:8080 -p 9568:9568 \
+    --env-file .env \
+    triagebot
 ```
 
-Clever Cloud auto-builds with `rebar3 as prod release` and runs the
-generated release. Point your GitHub App webhook at
-`https://<your-app>.cleverapps.io/webhook/github` and you're live.
+Point your GitHub App webhook at `https://<your-host>/webhook/github`.
+That's it.
 
 ## What's in v0.1
 

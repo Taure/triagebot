@@ -1,7 +1,7 @@
 [
     {nova, [
         {cowboy_configuration, #{
-            port => ${TRIAGEBOT_PORT}
+            port => 8080
         }},
         {use_strict_routing, true},
         {environment, prod}
