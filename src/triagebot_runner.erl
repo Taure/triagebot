@@ -28,6 +28,7 @@ and protects against the bot looping on its own label updates.
 ]).
 
 -define(TRIAGED_LABEL, ~"triaged").
+-define(CLAUDE_TRY_LABEL, ~"claude-try").
 
 -spec dispatch(atom(), gakudan_tickets:ticket()) -> ok.
 dispatch(Event, Ticket) when Event =:= issue_opened; Event =:= issue_labeled ->
@@ -100,6 +101,7 @@ apply_triage_output(Entries, Ticket, Source) ->
     Labels = extract_proposed_labels(Entries),
     _ = maybe_post_comment(Source, Id, Comment),
     _ = maybe_apply_labels(Source, Id, Labels),
+    _ = maybe_request_claude_implementation(Source, Id, Labels),
     ok.
 
 maybe_post_comment(_Source, _Id, <<>>) ->
@@ -121,6 +123,32 @@ maybe_apply_labels(Source, Id, Labels) ->
             ok;
         {error, Reason} ->
             ?LOG_ERROR(#{event => apply_labels_failed, reason => Reason, ticket_id => Id})
+    end.
+
+%% If the label_proposer asked for `claude-try`, leave a follow-up
+%% comment summoning the claude-code-action workflow in the same repo.
+%% The action listens on issues.labeled too, but posting an explicit
+%% mention makes the chain visible in the issue thread.
+maybe_request_claude_implementation(Source, Id, Labels) ->
+    case lists:member(?CLAUDE_TRY_LABEL, Labels) of
+        false ->
+            ok;
+        true ->
+            Body =
+                ~"@claude please implement this issue per the triage above. Open a PR closing this issue when done.",
+            case gakudan_tickets_github:post_comment(Source, Id, Body) of
+                ok ->
+                    ?LOG_INFO(#{
+                        event => claude_implementation_requested,
+                        ticket_id => Id
+                    });
+                {error, Reason} ->
+                    ?LOG_ERROR(#{
+                        event => claude_request_comment_failed,
+                        reason => Reason,
+                        ticket_id => Id
+                    })
+            end
     end.
 
 format_input(Ticket) ->
