@@ -1,0 +1,25 @@
+{application, triagebot, [
+    {description, "Multi-agent GitHub issue triage bot built on Nova + gakudan"},
+    {vsn, git},
+    {registered, [triagebot_sup]},
+    {mod, {triagebot_app, []}},
+    {included_applications, []},
+    {applications, [
+        kernel,
+        stdlib,
+        crypto,
+        inets,
+        ssl,
+        public_key,
+        nova,
+        gakudan,
+        gakudan_tickets,
+        gakudan_tickets_github,
+        gakudan_metrics
+    ]},
+    {env, []},
+    {modules, []},
+    {maintainers, []},
+    {licenses, ["MIT"]},
+    {links, [{"GitHub", "https://github.com/Taure/triagebot"}]}
+]}.

@@ -1,0 +1,4 @@
+-name triagebot@127.0.0.1
+-setcookie ${COOKIE}
++K true
++A 30

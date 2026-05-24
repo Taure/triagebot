@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+
+jobs:
+  ci:
+    uses: Taure/erlang-ci/.github/workflows/ci.yml@v2.1.1
+    permissions:
+      contents: write
+      pull-requests: write
+    with:
+      version-file: '.tool-versions'
+      enable-ct: true
+      enable-ex-doc: false
+      enable-hank: true
+      # rebar3_audit and rebar3_sbom both crash on git deps (the gakudan
+      # family is git-pinned). Re-enable when gakudan ships to Hex.
+      enable-audit: false
+      enable-coverage: true
+      enable-elp-lint: true
+      enable-elp-eqwalize: false
+      enable-sbom: false
+      enable-sbom-scan: false
+      enable-dependency-submission: true
+      enable-summary: true
