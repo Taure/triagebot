@@ -1,11 +1,14 @@
 [
     {kernel, [
-        {logger_level, debug},
+        {logger_level, info},
         {logger, [
             {handler, default, logger_std_h, #{
                 formatter => {nova_jsonlogger, #{
+                    schema => ecs,
                     map_depth => 3,
-                    term_depth => 50
+                    term_depth => 50,
+                    max_term_size => 8192,
+                    max_string_length => 8192
                 }}
             }}
         ]}

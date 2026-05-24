@@ -28,55 +28,48 @@ github_event(Req) ->
     EventType = cowboy_req:header(~"x-github-event", Req1, ~""),
     Delivery = cowboy_req:header(~"x-github-delivery", Req1, ~""),
     Secret = triagebot_config:webhook_secret(),
-
-    %% Echo to stdout via io:format so we are immune to whatever the logger
-    %% formatter might be dropping. This shows up in Clever Cloud's log
-    %% stream unconditionally.
-    io:format(
-        "[triagebot] webhook hit: delivery=~s event=~s sig_len=~p body_len=~p secret_len=~p~n",
-        [Delivery, EventType, byte_size(Sig), byte_size(Body), byte_size(Secret)]
-    ),
-
     Valid =
         try
             gakudan_tickets_github:verify_signature(Secret, Sig, Body)
         catch
-            Class:Reason ->
-                io:format(
-                    "[triagebot] verify_signature CRASHED: ~p:~p sig_len=~p body_len=~p secret_len=~p~n",
-                    [Class, Reason, byte_size(Sig), byte_size(Body), byte_size(Secret)]
-                ),
+            Class:Reason:Stack ->
+                ?LOG_ERROR(#{
+                    event => verify_signature_crashed,
+                    class => Class,
+                    reason => Reason,
+                    stacktrace => Stack,
+                    delivery => Delivery,
+                    github_event => EventType,
+                    sig_byte_size => byte_size(Sig),
+                    secret_byte_size => byte_size(Secret),
+                    body_byte_size => byte_size(Body)
+                }),
                 false
         end,
     case Valid of
         false ->
-            Expected = expected_signature_str(Secret, Body),
-            io:format(
-                "[triagebot] webhook 401: got_sig=~s expected_sig=~s body_fp=~s secret_fp=~s~n",
-                [
-                    Sig,
-                    Expected,
-                    fingerprint(Body),
-                    fingerprint(Secret)
-                ]
-            ),
+            ?LOG_WARNING(#{
+                event => webhook_signature_invalid,
+                delivery => Delivery,
+                github_event => EventType,
+                secret_byte_size => byte_size(Secret),
+                secret_fingerprint => fingerprint(Secret),
+                body_byte_size => byte_size(Body),
+                body_fingerprint => fingerprint(Body)
+            }),
             {status, 401};
         true ->
             handle_verified(EventType, Body, Delivery)
     end.
 
 %% First 8 hex chars of SHA-256(Bin). Lets us compare two binaries for
-%% equality without logging the underlying bytes.
+%% equality without leaking the underlying bytes.
 fingerprint(B) when is_binary(B) ->
     H = crypto:hash(sha256, B),
     binary:part(hex(H), 0, 8).
 
 hex(Bin) ->
     iolist_to_binary([io_lib:format("~2.16.0b", [B]) || <<B>> <= Bin]).
-
-expected_signature_str(Secret, Body) when is_binary(Secret), is_binary(Body) ->
-    Hash = crypto:mac(hmac, sha256, Secret, Body),
-    <<"sha256=", (hex(Hash))/binary>>.
 
 handle_verified(EventType, Body, Delivery) ->
     case gakudan_tickets_github:parse_webhook(EventType, Body) of
