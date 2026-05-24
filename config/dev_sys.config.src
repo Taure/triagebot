@@ -1,17 +1,26 @@
 [
+    {kernel, [
+        {logger_level, debug},
+        {logger, [
+            {handler, default, logger_std_h, #{
+                formatter => {nova_jsonlogger, #{
+                    map_depth => 3,
+                    term_depth => 50
+                }}
+            }}
+        ]}
+    ]},
     {nova, [
+        {environment, dev},
+        {use_stacktrace, true},
+        {dev_mode, true},
         {cowboy_configuration, #{
             port => 8080
         }},
-        {use_strict_routing, true},
-        {environment, dev}
+        {bootstrap_application, triagebot},
+        {json_lib, json}
     ]},
-    {kernel, [
-        {logger_level, info},
-        {logger, [
-            {handler, default, logger_std_h, #{
-                formatter => {logger_formatter, #{single_line => true}}
-            }}
-        ]}
+    {triagebot, [
+        {nova_apps, []}
     ]}
 ].
