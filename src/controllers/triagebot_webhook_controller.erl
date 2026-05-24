@@ -30,11 +30,38 @@ github_event(Req) ->
     Secret = triagebot_config:webhook_secret(),
     case gakudan_tickets_github:verify_signature(Secret, Sig, Body) of
         false ->
-            ?LOG_WARNING(#{event => webhook_signature_invalid, delivery => Delivery}),
+            ?LOG_WARNING(#{
+                event => webhook_signature_invalid,
+                delivery => Delivery,
+                github_event => EventType,
+                secret_byte_size => byte_size(Secret),
+                secret_fingerprint => fingerprint(Secret),
+                body_byte_size => byte_size(Body),
+                body_fingerprint => fingerprint(Body),
+                sig_header => Sig,
+                sig_prefix_match => is_sha256_prefix(Sig),
+                expected_signature => expected_signature(Secret, Body)
+            }),
             {status, 401};
         true ->
             handle_verified(EventType, Body, Delivery)
     end.
+
+%% First 8 hex chars of SHA-256(Bin). Lets us compare two binaries for
+%% equality without logging the underlying bytes.
+fingerprint(B) when is_binary(B) ->
+    H = crypto:hash(sha256, B),
+    binary:part(hex(H), 0, 8).
+
+hex(Bin) ->
+    iolist_to_binary([io_lib:format("~2.16.0b", [B]) || <<B>> <= Bin]).
+
+is_sha256_prefix(<<"sha256=", _/binary>>) -> true;
+is_sha256_prefix(_) -> false.
+
+expected_signature(Secret, Body) when is_binary(Secret), is_binary(Body) ->
+    Hash = crypto:mac(hmac, sha256, Secret, Body),
+    <<"sha256=", (hex(Hash))/binary>>.
 
 handle_verified(EventType, Body, Delivery) ->
     case gakudan_tickets_github:parse_webhook(EventType, Body) of
