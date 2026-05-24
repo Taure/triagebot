@@ -1,17 +1,25 @@
 [
-    {nova, [
-        {cowboy_configuration, #{
-            port => 8080
-        }},
-        {use_strict_routing, true},
-        {environment, prod}
-    ]},
     {kernel, [
         {logger_level, info},
         {logger, [
             {handler, default, logger_std_h, #{
-                formatter => {logger_formatter, #{single_line => true}}
+                formatter => {nova_jsonlogger, #{
+                    map_depth => 3,
+                    term_depth => 50
+                }}
             }}
         ]}
+    ]},
+    {nova, [
+        {environment, prod},
+        {cowboy_configuration, #{
+            port => 8080,
+            ip => {0, 0, 0, 0}
+        }},
+        {bootstrap_application, triagebot},
+        {json_lib, json}
+    ]},
+    {triagebot, [
+        {nova_apps, []}
     ]}
 ].
