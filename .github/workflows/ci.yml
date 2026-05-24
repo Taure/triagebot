@@ -23,12 +23,13 @@ jobs:
       enable-ct: true
       enable-ex-doc: false
       enable-hank: true
-      # rebar3_audit currently crashes on git deps (gakudan family is git-pinned).
+      # rebar3_audit and rebar3_sbom both crash on git deps (the gakudan
+      # family is git-pinned). Re-enable when gakudan ships to Hex.
       enable-audit: false
       enable-coverage: true
       enable-elp-lint: true
       enable-elp-eqwalize: false
-      enable-sbom: true
-      enable-sbom-scan: true
+      enable-sbom: false
+      enable-sbom-scan: false
       enable-dependency-submission: true
       enable-summary: true
