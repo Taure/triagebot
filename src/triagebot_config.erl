@@ -41,7 +41,7 @@ Optional:
 
 -spec setup() -> ok.
 setup() ->
-    persistent_term:put(?SECRET_KEY, must_env("TRIAGEBOT_WEBHOOK_SECRET")),
+    persistent_term:put(?SECRET_KEY, list_to_binary(must_env("TRIAGEBOT_WEBHOOK_SECRET"))),
     persistent_term:put(?SOURCE_KEY, resolve_github_source()),
     {LlmSpec, Model} = resolve_llm(),
     persistent_term:put(?LLM_KEY, LlmSpec),
