@@ -1,0 +1,21 @@
+# Build artifacts (re-built inside the container).
+_build/
+.rebar3/
+*.beam
+ebin/
+deps/
+rebar3.crashdump
+
+# Runtime + dev junk.
+log/
+logs/
+erl_crash.dump
+
+# VCS + editor + agent state.
+.git/
+.github/
+.gitignore
+.vscode/
+.idea/
+*.swp
+CLAUDE.md

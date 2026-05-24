@@ -116,18 +116,27 @@ Hit `/health` from another terminal: `curl http://localhost:8080/health`.
 
 ### 4. Deploy to Clever Cloud
 
-Clever Cloud has first-class Erlang support. Create an Erlang application,
-add the env vars above via the console, set Postgres add-on if you want
-v0.2 features, then:
+Triagebot ships a `Dockerfile`. Create a **Docker** application on
+Clever Cloud (not the native Erlang runtime); Clever detects the
+Dockerfile at the repo root, builds the image, and runs the container.
 
 ```bash
 git remote add clever https://push.clever-cloud.com/<your-app-id>.git
 git push clever main
 ```
 
-Clever Cloud auto-builds with `rebar3 as prod release` and runs the
-generated release. Point your GitHub App webhook at
+Set the env vars from sections 2 above on the Clever app. No build-
+or run-command env vars are needed — they're encapsulated in the
+Dockerfile (`CMD ["bin/triagebot", "foreground"]`).
+
+Point your GitHub App webhook at
 `https://<your-app>.cleverapps.io/webhook/github` and you're live.
+
+If Clever's builder OOMs on the Erlang compile (it has a smaller
+memory ceiling than GitHub Actions), the asobi_site pattern is to
+build the image in GitHub Actions, push to GHCR, and have Clever's
+Dockerfile be a 1-line `FROM ghcr.io/...:latest` passthrough. Skip
+that complexity unless OOM actually bites.
 
 ## What's in v0.1
 
