@@ -28,7 +28,23 @@ github_event(Req) ->
     EventType = cowboy_req:header(~"x-github-event", Req1, ~""),
     Delivery = cowboy_req:header(~"x-github-delivery", Req1, ~""),
     Secret = triagebot_config:webhook_secret(),
-    case gakudan_tickets_github:verify_signature(Secret, Sig, Body) of
+    Valid =
+        try
+            gakudan_tickets_github:verify_signature(Secret, Sig, Body)
+        catch
+            Class:Reason:Stack ->
+                ?LOG_ERROR(#{
+                    event => verify_signature_crashed,
+                    class => Class,
+                    reason => Reason,
+                    stack => Stack,
+                    sig_byte_size => byte_size(Sig),
+                    secret_byte_size => byte_size(Secret),
+                    body_byte_size => byte_size(Body)
+                }),
+                false
+        end,
+    case Valid of
         false ->
             ?LOG_WARNING(#{
                 event => webhook_signature_invalid,
