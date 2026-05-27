@@ -11,11 +11,16 @@
         inets,
         ssl,
         public_key,
+        telemetry,
         nova,
+        nova_auth,
+        nova_auth_oidc,
+        datastar,
         gakudan,
         gakudan_tickets,
         gakudan_tickets_github,
-        gakudan_metrics
+        gakudan_metrics,
+        gakudan_liveboard
     ]},
     {env, []},
     {modules, []},
