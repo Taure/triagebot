@@ -19,16 +19,6 @@ routes(_Environment) ->
             ]
         },
         #{
-            prefix => "/auth",
-            security => false,
-            routes => [
-                {"/:provider/login", fun triagebot_auth_controller:login/1, #{methods => [get]}},
-                {"/:provider/callback", fun triagebot_auth_controller:callback/1, #{
-                    methods => [get]
-                }}
-            ]
-        },
-        #{
             prefix => "",
             security => fun triagebot_dashboard_auth:check/1,
             routes => [

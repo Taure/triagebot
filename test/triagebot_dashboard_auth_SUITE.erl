@@ -4,34 +4,33 @@
 
 -export([all/0, init_per_testcase/2, end_per_testcase/2]).
 -export([
-    unauthenticated_redirects_to_login/1,
-    login_url_honours_provider_env/1,
-    no_allowlist_allows_any_authenticated/1,
-    allowlist_permits_listed_domain/1,
-    allowlist_is_case_insensitive/1,
-    allowlist_rejects_other_domain/1,
-    allowlist_rejects_actor_without_email/1,
-    adapt_normalises_binary_binding/1,
-    adapt_defaults_provider_to_google/1,
-    oidc_config_exposes_google_provider/1
+    denied_when_unconfigured/1,
+    challenges_without_credentials/1,
+    challenge_sets_www_authenticate/1,
+    accepts_correct_credentials/1,
+    rejects_wrong_password/1,
+    rejects_wrong_username/1
 ]).
+
+-define(USER, "conductor").
+-define(PASS, "a-very-long-hard-passphrase").
 
 all() ->
     [
-        unauthenticated_redirects_to_login,
-        login_url_honours_provider_env,
-        no_allowlist_allows_any_authenticated,
-        allowlist_permits_listed_domain,
-        allowlist_is_case_insensitive,
-        allowlist_rejects_other_domain,
-        allowlist_rejects_actor_without_email,
-        adapt_normalises_binary_binding,
-        adapt_defaults_provider_to_google,
-        oidc_config_exposes_google_provider
+        denied_when_unconfigured,
+        challenges_without_credentials,
+        challenge_sets_www_authenticate,
+        accepts_correct_credentials,
+        rejects_wrong_password,
+        rejects_wrong_username
     ].
 
-init_per_testcase(_Case, Config) ->
+init_per_testcase(denied_when_unconfigured, Config) ->
     clear_env(),
+    Config;
+init_per_testcase(_Case, Config) ->
+    os:putenv("TRIAGEBOT_DASHBOARD_USER", ?USER),
+    os:putenv("TRIAGEBOT_DASHBOARD_PASSWORD", ?PASS),
     Config.
 
 end_per_testcase(_Case, _Config) ->
@@ -39,61 +38,39 @@ end_per_testcase(_Case, _Config) ->
     ok.
 
 clear_env() ->
-    os:unsetenv("TRIAGEBOT_DASHBOARD_ALLOWED_DOMAINS"),
-    os:unsetenv("TRIAGEBOT_OIDC_PROVIDER"),
-    os:unsetenv("TRIAGEBOT_OIDC_CLIENT_ID").
+    os:unsetenv("TRIAGEBOT_DASHBOARD_USER"),
+    os:unsetenv("TRIAGEBOT_DASHBOARD_PASSWORD").
 
-unauthenticated_redirects_to_login(_Config) ->
-    ?assertEqual(
-        {false, 302, #{~"location" => ~"/auth/google/login"}, ~""},
-        triagebot_dashboard_auth:authorize({error, not_found})
-    ).
+denied_when_unconfigured(_Config) ->
+    ?assertMatch({false, 503, _, _}, triagebot_dashboard_auth:check(req(undefined))).
 
-login_url_honours_provider_env(_Config) ->
-    os:putenv("TRIAGEBOT_OIDC_PROVIDER", "authentik"),
-    {false, 302, Headers, _} = triagebot_dashboard_auth:authorize({error, not_found}),
-    ?assertEqual(~"/auth/authentik/login", maps:get(~"location", Headers)).
+challenges_without_credentials(_Config) ->
+    ?assertMatch({false, 401, _, _}, triagebot_dashboard_auth:check(req(undefined))).
 
-no_allowlist_allows_any_authenticated(_Config) ->
-    Actor = #{email => ~"anyone@whatever.com"},
-    ?assertEqual({true, Actor}, triagebot_dashboard_auth:authorize({ok, Actor})).
+challenge_sets_www_authenticate(_Config) ->
+    {false, 401, Headers, _} = triagebot_dashboard_auth:check(req(undefined)),
+    ?assert(maps:is_key(~"www-authenticate", Headers)).
 
-allowlist_permits_listed_domain(_Config) ->
-    os:putenv("TRIAGEBOT_DASHBOARD_ALLOWED_DOMAINS", "taure.se, example.com"),
-    Actor = #{email => ~"daniel@taure.se"},
-    ?assertEqual({true, Actor}, triagebot_dashboard_auth:authorize({ok, Actor})).
-
-allowlist_is_case_insensitive(_Config) ->
-    os:putenv("TRIAGEBOT_DASHBOARD_ALLOWED_DOMAINS", "Taure.SE"),
-    Actor = #{email => ~"Daniel@TAURE.se"},
-    ?assertEqual({true, Actor}, triagebot_dashboard_auth:authorize({ok, Actor})).
-
-allowlist_rejects_other_domain(_Config) ->
-    os:putenv("TRIAGEBOT_DASHBOARD_ALLOWED_DOMAINS", "taure.se"),
+accepts_correct_credentials(_Config) ->
     ?assertMatch(
-        {false, 403, _, _},
-        triagebot_dashboard_auth:authorize({ok, #{email => ~"intruder@evil.com"}})
+        {true, #{user := <<"conductor">>}},
+        triagebot_dashboard_auth:check(req({?USER, ?PASS}))
     ).
 
-allowlist_rejects_actor_without_email(_Config) ->
-    os:putenv("TRIAGEBOT_DASHBOARD_ALLOWED_DOMAINS", "taure.se"),
+rejects_wrong_password(_Config) ->
     ?assertMatch(
-        {false, 403, _, _},
-        triagebot_dashboard_auth:authorize({ok, #{id => ~"u1"}})
+        {false, 401, _, _},
+        triagebot_dashboard_auth:check(req({?USER, "wrong"}))
     ).
 
-adapt_normalises_binary_binding(_Config) ->
-    Adapted = triagebot_auth_controller:adapt(#{bindings => #{~"provider" => ~"authentik"}}),
-    ?assertEqual(~"authentik", maps:get(provider, maps:get(bindings, Adapted))),
-    ?assertEqual(triagebot_oidc_config, maps:get(auth_mod, Adapted)).
+rejects_wrong_username(_Config) ->
+    ?assertMatch(
+        {false, 401, _, _},
+        triagebot_dashboard_auth:check(req({"intruder", ?PASS}))
+    ).
 
-adapt_defaults_provider_to_google(_Config) ->
-    Adapted = triagebot_auth_controller:adapt(#{bindings => #{}}),
-    ?assertEqual(~"google", maps:get(provider, maps:get(bindings, Adapted))).
-
-oidc_config_exposes_google_provider(_Config) ->
-    os:putenv("TRIAGEBOT_OIDC_CLIENT_ID", "abc.apps.googleusercontent.com"),
-    Cfg = triagebot_oidc_config:config(),
-    Google = maps:get(google, maps:get(providers, Cfg)),
-    ?assertEqual(~"abc.apps.googleusercontent.com", maps:get(client_id, Google)),
-    ?assertEqual(#{~"sub" => id, ~"email" => email}, maps:get(claims_mapping, Cfg)).
+req(undefined) ->
+    #{headers => #{}};
+req({User, Pass}) ->
+    Cred = base64:encode(iolist_to_binary([User, ":", Pass])),
+    #{headers => #{~"authorization" => <<"Basic ", Cred/binary>>}}.

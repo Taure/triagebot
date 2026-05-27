@@ -13,8 +13,6 @@
         public_key,
         telemetry,
         nova,
-        nova_auth,
-        nova_auth_oidc,
         datastar,
         gakudan,
         gakudan_tickets,
