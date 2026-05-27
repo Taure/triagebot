@@ -14,7 +14,7 @@
   0},
  {<<"gakudan_liveboard">>,
   {git,"https://github.com/Taure/gakudan_liveboard.git",
-       {ref,"d76e6a107de1f0b549d12a35aa1b5556c72648fb"}},
+       {ref,"c8d7b884260ebde2b9b77cb1f6667e7c43e7532b"}},
   0},
  {<<"gakudan_metrics">>,
   {git,"https://github.com/Taure/gakudan_metrics.git",
