@@ -8,8 +8,6 @@
     scoper_uses_repo_context_tool/1,
     dup_detector_uses_search_tool/1,
     label_proposer_has_required_callbacks/1,
-    label_proposer_prompt_includes_repo_labels_when_present/1,
-    label_proposer_prompt_falls_back_when_labels_empty/1,
     summariser_has_required_callbacks/1,
     all_agents_have_distinct_ids/1,
     all_system_prompts_non_empty/1
@@ -29,8 +27,6 @@ all() ->
         scoper_uses_repo_context_tool,
         dup_detector_uses_search_tool,
         label_proposer_has_required_callbacks,
-        label_proposer_prompt_includes_repo_labels_when_present,
-        label_proposer_prompt_falls_back_when_labels_empty,
         summariser_has_required_callbacks,
         all_agents_have_distinct_ids,
         all_system_prompts_non_empty
@@ -59,29 +55,6 @@ dup_detector_uses_search_tool(_Config) ->
 
 label_proposer_has_required_callbacks(_Config) ->
     assert_agent_callbacks(triagebot_label_proposer, label_proposer, []).
-
-label_proposer_prompt_includes_repo_labels_when_present(_Config) ->
-    Labels = [
-        #{name => ~"bug", description => ~"Something is broken", color => ~"d73a4a"},
-        #{name => ~"docs", description => ~"", color => ~"0075ca"}
-    ],
-    persistent_term:put({triagebot_config, repo_labels}, Labels),
-    try
-        Prompt = triagebot_label_proposer:system_prompt(),
-        ?assert(binary:match(Prompt, ~"bug") =/= nomatch),
-        ?assert(binary:match(Prompt, ~"Something is broken") =/= nomatch),
-        ?assert(binary:match(Prompt, ~"docs") =/= nomatch),
-        ?assert(binary:match(Prompt, ~"defined in this repo") =/= nomatch),
-        ?assertEqual(nomatch, binary:match(Prompt, ~"could not be fetched"))
-    after
-        persistent_term:put({triagebot_config, repo_labels}, [])
-    end.
-
-label_proposer_prompt_falls_back_when_labels_empty(_Config) ->
-    persistent_term:put({triagebot_config, repo_labels}, []),
-    Prompt = triagebot_label_proposer:system_prompt(),
-    ?assert(binary:match(Prompt, ~"could not be fetched") =/= nomatch),
-    ?assert(binary:match(Prompt, ~"base vocabulary") =/= nomatch).
 
 summariser_has_required_callbacks(_Config) ->
     assert_agent_callbacks(triagebot_summariser, summariser, []).

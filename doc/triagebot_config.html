@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.39.1">
+    <meta name="project" content="triagebot v0.1.13">
+
+
+    <title>triagebot_config — triagebot v0.1.13</title>
+
+    <link rel="stylesheet" href="dist/html-erlang-7YNYEB7F.css" />
+
+    <script defer src="dist/sidebar_items-463C534A.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-HBZYRXZS.js"></script>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="api-reference.html" class="sidebar-projectName" translate="no">
+triagebot
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.1.13
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras=""></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-module" id="main" data-type="modules">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of triagebot</span>
+            <div class="search-input-wrapper">
+              <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+              <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+                <i class="ri-close-line ri-lg" title="Cancel search"></i>
+              </button>
+            </div>
+          </label>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <div class="engine-selector" data-multiple="false">
+          <button type="button" class="engine-button" aria-label="Select search engine" aria-haspopup="true" aria-expanded="false">
+            <i class="ri-search-2-line" aria-hidden="true"></i>
+            <span class="engine-name">Default</span>
+            <i class="ri-arrow-down-s-line" aria-hidden="true"></i>
+          </button>
+          <div class="engine-dropdown" hidden role="menu">
+
+              <button type="button"
+                      class="engine-option"
+                      data-engine-url="search.html?q="
+                      role="menuitemradio"
+                      aria-checked="true">
+                <span class="name">Default</span>
+                <span class="help">In-browser search</span>
+              </button>
+
+          </div>
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>
+      <span translate="no">triagebot_config</span> 
+      <small class="app-vsn" translate="no">(triagebot v0.1.13)</small>
+
+    </h1>
+
+  </div>
+
+
+    <section id="moduledoc">
+<p>Runtime configuration for triagebot, sourced from env vars.</p><p>Reads everything from the environment at startup, stashes the resolved
+GitHub source_ref in <code class="inline">persistent_term</code> so the search tool (which runs
+inside a turn-worker process spawned by gakudan) can read it without a
+GenServer round-trip.</p><p>Required env vars:</p><ul><li>TRIAGEBOT_WEBHOOK_SECRET    GitHub webhook shared secret (HMAC)</li><li>TRIAGEBOT_REPO_OWNER        e.g. &quot;Taure&quot;</li><li>TRIAGEBOT_REPO_NAME         e.g. &quot;gakudan&quot;</li></ul><p>GitHub auth (one of):</p><ul><li>TRIAGEBOT_GITHUB_TOKEN                            (PAT mode)</li><li>TRIAGEBOT_GITHUB_APP_ID + TRIAGEBOT_GITHUB_APP_PRIVATE_KEY_PEM<ul><li>TRIAGEBOT_GITHUB_INSTALLATION_ID              (App mode)</li></ul></li></ul><p>LLM backend (one of):</p><ul><li>ANTHROPIC_API_KEY</li><li>GEMINI_API_KEY</li></ul><p>Optional:</p><ul><li>TRIAGEBOT_PORT              Nova listen port (default 8080)</li><li>TRIAGEBOT_METRICS_PORT      Prometheus /metrics port (default 9568,<pre><code class="makeup erlang" translate="no"><span class="w">                        </span><span class="ss">set</span><span class="w"> </span><span class="ss">to</span><span class="w"> </span><span class="s">&quot;&quot;</span><span class="w"> </span><span class="ss">to</span><span class="w"> </span><span class="ss">disable</span><span class="p">)</span></code></pre></li><li>TRIAGEBOT_AGENT_MODEL       Override per-agent model (default<pre><code class="makeup erlang" translate="no"><span class="w">                        </span><span class="ss">claude</span><span class="o">-</span><span class="ss">sonnet</span><span class="o">-</span><span class="mi">4</span><span class="o">-</span><span class="mi">6</span><span class="w"> </span><span class="ss">for</span><span class="w"> </span><span class="n">Anthropic</span><span class="p">,</span><span class="w">
+                        </span><span class="ss">gemini</span><span class="o">-</span><span class="mf">2.5</span><span class="o">-</span><span class="ss">flash</span><span class="w"> </span><span class="ss">for</span><span class="w"> </span><span class="n">Gemini</span><span class="p">)</span></code></pre></li><li>TRIAGEBOT_POLICY_PATH       Filesystem path to a triage-policy file<pre><code class="makeup erlang" translate="no"><span class="w">                        </span><span class="ss">read</span><span class="w"> </span><span class="ss">at</span><span class="w"> </span><span class="ss">startup</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="ss">fed</span><span class="w"> </span><span class="ss">to</span><span class="w"> </span><span class="ss">every</span><span class="w"> </span><span class="ss">agent</span><span class="p">.</span><span class="w">
+                        </span><span class="n">Defaults</span><span class="w"> </span><span class="ss">to</span><span class="w"> </span><span class="ss">the</span><span class="w"> </span><span class="ss">bundled</span><span class="w"> </span><span class="ss">priv</span><span class="o">/</span><span class="n">TRIAGE</span><span class="p">.</span><span class="ss">md</span><span class="w"> </span><span class="ss">so</span><span class="w">
+                        </span><span class="ss">the</span><span class="w"> </span><span class="ss">policy</span><span class="w"> </span><span class="ss">ships</span><span class="w"> </span><span class="ss">with</span><span class="w"> </span><span class="ss">the</span><span class="w"> </span><span class="ss">release</span><span class="p">.</span><span class="w"> </span><span class="n">Absent</span><span class="w">
+                        </span><span class="ss">file</span><span class="w"> </span><span class="ss">is</span><span class="w"> </span><span class="ss">fine</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="ss">agents</span><span class="w"> </span><span class="ss">fall</span><span class="w"> </span><span class="ss">back</span><span class="w"> </span><span class="ss">to</span><span class="w"> </span><span class="ss">their</span><span class="w">
+                        </span><span class="ss">built</span><span class="o">-</span><span class="ss">in</span><span class="w"> </span><span class="ss">defaults</span><span class="p">.</span></code></pre></li></ul>
+    </section>
+
+</div>
+
+  <section id="summary" class="details-list">
+    <h1 class="section-heading">
+      <a class="hover-link" href="#summary">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Summary</span>
+    </h1>
+<div class="summary-functions summary">
+  <h2>
+    <a href="#functions">Functions</a>
+  </h2>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#agent_model/0" data-no-tooltip="" translate="no">agent_model()</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#github_source/0" data-no-tooltip="" translate="no">github_source()</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#llm_backend_spec/0" data-no-tooltip="" translate="no">llm_backend_spec()</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#metrics_port/0" data-no-tooltip="" translate="no">metrics_port()</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#port/0" data-no-tooltip="" translate="no">port()</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#refresh_repo_labels/0" data-no-tooltip="" translate="no">refresh_repo_labels()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Re-fetch the repo's labels from GitHub and update the cached value.
+Useful from a remote shell when the repo's label taxonomy changes
+between deploys.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#refresh_triage_policy/0" data-no-tooltip="" translate="no">refresh_triage_policy()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Re-fetch the triage-policy file from GitHub and update the cached value.
+Useful from a remote shell when the policy changes between deploys.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#repo_labels/0" data-no-tooltip="" translate="no">repo_labels()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Return the configured repo's labels (as fetched at startup). Each
+label is <code class="inline">#{name, description, color}</code>. Empty list if the fetch
+failed - the agents fall back to their built-in vocabulary in that
+case.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#setup/0" data-no-tooltip="" translate="no">setup()</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#triage_policy/0" data-no-tooltip="" translate="no">triage_policy()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Return the repo's triage-policy file contents (as fetched at startup),
+or an empty binary if no policy file was found. The policy is fed to
+every triage agent via the run input.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#webhook_secret/0" data-no-tooltip="" translate="no">webhook_secret()</a>
+
+      </div>
+
+    </div>
+
+</div>
+
+  </section>
+
+
+  <section id="functions" class="details-list">
+    <h1 class="section-heading">
+      <a class="hover-link" href="#functions">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions</span>
+    </h1>
+
+    <div class="functions-list">
+<section class="detail" id="agent_model/0">
+
+  <div class="detail-header">
+    <a href="#agent_model/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">agent_model()</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> agent_model() -> <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:binary/0">binary</a>().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="github_source/0">
+
+  <div class="detail-header">
+    <a href="#github_source/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">github_source()</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> github_source() -> <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:map/0">map</a>().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="llm_backend_spec/0">
+
+  <div class="detail-header">
+    <a href="#llm_backend_spec/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">llm_backend_spec()</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> llm_backend_spec() -> {<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:module/0">module</a>(), <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:map/0">map</a>()}.</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="metrics_port/0">
+
+  <div class="detail-header">
+    <a href="#metrics_port/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">metrics_port()</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> metrics_port() -> <a href="https://www.erlang.org/doc/apps/kernel/inet.html#t:port_number/0">inet:port_number</a>() | undefined.</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="port/0">
+
+  <div class="detail-header">
+    <a href="#port/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">port()</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> port() -> <a href="https://www.erlang.org/doc/apps/kernel/inet.html#t:port_number/0">inet:port_number</a>().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="refresh_repo_labels/0">
+
+  <div class="detail-header">
+    <a href="#refresh_repo_labels/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">refresh_repo_labels()</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> refresh_repo_labels() -> ok | {error, <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>()}.</pre>
+
+      </div>
+
+<p>Re-fetch the repo's labels from GitHub and update the cached value.
+Useful from a remote shell when the repo's label taxonomy changes
+between deploys.</p>
+  </section>
+</section>
+<section class="detail" id="refresh_triage_policy/0">
+
+  <div class="detail-header">
+    <a href="#refresh_triage_policy/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">refresh_triage_policy()</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> refresh_triage_policy() -> ok | {error, <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>()}.</pre>
+
+      </div>
+
+<p>Re-fetch the triage-policy file from GitHub and update the cached value.
+Useful from a remote shell when the policy changes between deploys.</p>
+  </section>
+</section>
+<section class="detail" id="repo_labels/0">
+
+  <div class="detail-header">
+    <a href="#repo_labels/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">repo_labels()</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> repo_labels() -> [#{name := <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:binary/0">binary</a>(), description := <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:binary/0">binary</a>(), color := <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:binary/0">binary</a>()}].</pre>
+
+      </div>
+
+<p>Return the configured repo's labels (as fetched at startup). Each
+label is <code class="inline">#{name, description, color}</code>. Empty list if the fetch
+failed - the agents fall back to their built-in vocabulary in that
+case.</p>
+  </section>
+</section>
+<section class="detail" id="setup/0">
+
+  <div class="detail-header">
+    <a href="#setup/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">setup()</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> setup() -> ok.</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="triage_policy/0">
+
+  <div class="detail-header">
+    <a href="#triage_policy/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">triage_policy()</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> triage_policy() -> <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:binary/0">binary</a>().</pre>
+
+      </div>
+
+<p>Return the repo's triage-policy file contents (as fetched at startup),
+or an empty binary if no policy file was found. The policy is fed to
+every triage agent via the run input.</p>
+  </section>
+</section>
+<section class="detail" id="webhook_secret/0">
+
+  <div class="detail-header">
+    <a href="#webhook_secret/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">webhook_secret()</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> webhook_secret() -> <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:binary/0">binary</a>().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+
+    </div>
+  </section>
+
+    <footer class="footer">
+      <p>
+
+          <span class="line">
+            <a href="https://hex.pm/packages/triagebot/0.1.13" class="footer-hex-package">Hex Package</a>
+
+            <a href="https://preview.hex.pm/preview/triagebot/0.1.13">Hex Preview</a>
+
+          </span>
+
+        <span class="line">
+          <button class="a-main footer-button display-quick-switch" title="Search HexDocs packages">
+            Search HexDocs
+          </button>
+
+            <a href="triagebot.epub" title="ePub version">
+              Download ePub version
+            </a>
+
+        </span>
+      </p>
+
+      <p class="built-using">
+        Built using
+        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.39.1) for the
+
+          <a href="https://erlang.org" title="Erlang" target="_blank" translate="no">Erlang programming language</a>
+
+      </p>
+
+    </footer>
+  </div>
+</main>
+</div>
+
+  </body>
+</html>

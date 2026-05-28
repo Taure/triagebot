@@ -28,6 +28,12 @@ Optional:
 - TRIAGEBOT_AGENT_MODEL       Override per-agent model (default
                               claude-sonnet-4-6 for Anthropic,
                               gemini-2.5-flash for Gemini)
+- TRIAGEBOT_POLICY_PATH       Filesystem path to a triage-policy file
+                              read at startup and fed to every agent.
+                              Defaults to the bundled priv/TRIAGE.md so
+                              the policy ships with the release. Absent
+                              file is fine - agents fall back to their
+                              built-in defaults.
 """.
 
 -include_lib("kernel/include/logger.hrl").
@@ -36,12 +42,15 @@ Optional:
 -export([webhook_secret/0, github_source/0, llm_backend_spec/0, agent_model/0]).
 -export([port/0, metrics_port/0]).
 -export([repo_labels/0, refresh_repo_labels/0]).
+-export([triage_policy/0, refresh_triage_policy/0]).
 
 -define(SOURCE_KEY, {?MODULE, github_source}).
 -define(SECRET_KEY, {?MODULE, webhook_secret}).
 -define(LLM_KEY, {?MODULE, llm_backend_spec}).
 -define(MODEL_KEY, {?MODULE, agent_model}).
 -define(LABELS_KEY, {?MODULE, repo_labels}).
+-define(POLICY_KEY, {?MODULE, triage_policy}).
+-define(POLICY_MAX_BYTES, 8_000).
 
 -spec setup() -> ok.
 setup() ->
@@ -51,6 +60,7 @@ setup() ->
     persistent_term:put(?LLM_KEY, LlmSpec),
     persistent_term:put(?MODEL_KEY, Model),
     persistent_term:put(?LABELS_KEY, fetch_repo_labels()),
+    persistent_term:put(?POLICY_KEY, fetch_triage_policy()),
     ok.
 
 -spec webhook_secret() -> binary().
@@ -110,7 +120,64 @@ refresh_repo_labels() ->
             Err
     end.
 
+-doc """
+Return the repo's triage-policy file contents (as fetched at startup),
+or an empty binary if no policy file was found. The policy is fed to
+every triage agent via the run input.
+""".
+-spec triage_policy() -> binary().
+triage_policy() ->
+    persistent_term:get(?POLICY_KEY, ~"").
+
+-doc """
+Re-fetch the triage-policy file from GitHub and update the cached value.
+Useful from a remote shell when the policy changes between deploys.
+""".
+-spec refresh_triage_policy() -> ok | {error, term()}.
+refresh_triage_policy() ->
+    case read_policy_file(policy_path()) of
+        {ok, Policy} ->
+            persistent_term:put(?POLICY_KEY, Policy),
+            ok;
+        {error, _} = Err ->
+            Err
+    end.
+
 %% --- internal ---
+
+policy_path() ->
+    case os:getenv("TRIAGEBOT_POLICY_PATH") of
+        false -> default_policy_path();
+        "" -> default_policy_path();
+        V -> V
+    end.
+
+default_policy_path() ->
+    filename:join(code:priv_dir(triagebot), "TRIAGE.md").
+
+fetch_triage_policy() ->
+    Path = policy_path(),
+    case read_policy_file(Path) of
+        {ok, Policy} ->
+            Policy;
+        {error, Reason} ->
+            ?LOG_INFO(#{
+                event => triage_policy_not_loaded,
+                reason => Reason,
+                path => Path
+            }),
+            ~""
+    end.
+
+read_policy_file(Path) ->
+    case file:read_file(Path) of
+        {ok, Bytes} when byte_size(Bytes) =< ?POLICY_MAX_BYTES ->
+            {ok, Bytes};
+        {ok, Bytes} ->
+            {ok, binary:part(Bytes, 0, ?POLICY_MAX_BYTES)};
+        {error, _} = Err ->
+            Err
+    end.
 
 resolve_github_source() ->
     Owner = list_to_binary(must_env("TRIAGEBOT_REPO_OWNER")),

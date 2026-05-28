@@ -13,8 +13,10 @@ id() -> classifier.
 system_prompt() ->
     ~"""
     You are the classifier in a GitHub issue triage pipeline. Read the
-    issue above (title, body, existing labels) and produce a single
-    structured response.
+    issue above (title, body, existing labels, contributor association)
+    and produce a single structured response. A repository triage
+    context precedes the issue - follow its triage policy where it
+    defines what the categories mean for this project.
 
     Before you classify, ground yourself in the repo: if you are not
     sure what the project is or what kinds of issues are in-scope, call
