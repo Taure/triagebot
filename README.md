@@ -104,6 +104,26 @@ Optional:
 | `TRIAGEBOT_PORT` | `8080` | Nova HTTP listener |
 | `TRIAGEBOT_METRICS_PORT` | `9568` | Prometheus /metrics; set to `""` to disable |
 | `TRIAGEBOT_AGENT_MODEL` | per-backend | Override agent model |
+| `TRIAGEBOT_POLICY_PATH` | `priv/TRIAGE.md` | Filesystem path to the triage-policy file fed to every agent |
+
+### Triage policy
+
+Every triage run is fed a shared **repository triage context** before the
+issue: the contents of a triage-policy file plus the repo's label
+taxonomy. The policy teaches the agents how *this* project triages -
+what the categories mean, the severity rubric, which labels to use,
+escalation rules - and agents follow it where it conflicts with their
+built-in defaults.
+
+The policy ships in the release at `priv/TRIAGE.md`; edit that file and
+redeploy, or point `TRIAGEBOT_POLICY_PATH` at another file. A missing
+file is fine - agents fall back to their built-in defaults. To reload
+without a redeploy, call `triagebot_config:refresh_triage_policy()` from
+a remote shell.
+
+Each issue also carries its high-signal GitHub fields into the context:
+contributor association (e.g. `FIRST_TIME_CONTRIBUTOR`), reaction count,
+comment count, milestone, and assignees.
 
 ### 3. Local development with PAT
 
@@ -141,8 +161,10 @@ That's it.
 - Spawn-and-forget async (BEAM process per webhook) so the response
   returns 202 immediately while triage runs in the background
 - GitHub App or PAT auth (via `gakudan_tickets_github` v0.1.2+)
-- Repo-context awareness: classifier + scoper can read repo files;
-  label_proposer picks from the repo's actual label taxonomy
+- Repo-context awareness: a bundled triage policy (`priv/TRIAGE.md`) +
+  the repo's actual label taxonomy + each issue's contributor/reaction/
+  milestone signals are fed to every agent; classifier + scoper can also
+  read repo files on demand
 - Prometheus `/metrics` via `gakudan_metrics`
 - 20-case CT suite covering the runner helpers, agent callbacks, tool
   shapes, and dynamic prompt building

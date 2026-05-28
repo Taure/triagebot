@@ -81,7 +81,7 @@ safe_stop(RunId) ->
     end.
 
 do_run(RunId, Ticket, Source) ->
-    Input = format_input(Ticket),
+    Input = triagebot_context:build_input(Ticket),
     ok = gakudan:send(RunId, Input),
     case gakudan:await(RunId, 120_000) of
         {ok, Entries} ->
@@ -150,32 +150,6 @@ maybe_request_claude_implementation(Source, Id, Labels) ->
                     })
             end
     end.
-
-format_input(Ticket) ->
-    Id = maps:get(id, Ticket),
-    Title = maps:get(title, Ticket, ~""),
-    Body = maps:get(body, Ticket, ~""),
-    Author = maps:get(author, Ticket, ~""),
-    Labels = maps:get(labels, Ticket, []),
-    iolist_to_binary([
-        ~"GitHub issue #",
-        Id,
-        ~": \"",
-        Title,
-        ~"\"\n",
-        ~"Opened by @",
-        Author,
-        ~"\n",
-        ~"Existing labels: ",
-        format_label_list(Labels),
-        ~"\n\n",
-        ~"---\n",
-        Body,
-        ~"\n---\n"
-    ]).
-
-format_label_list([]) -> ~"(none)";
-format_label_list(Labels) -> iolist_to_binary(lists:join(~", ", Labels)).
 
 extract_agent_turn(Entries, AgentId, Default) ->
     Reversed = lists:reverse(Entries),

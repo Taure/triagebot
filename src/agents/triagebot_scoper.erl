@@ -13,8 +13,9 @@ id() -> scoper.
 system_prompt() ->
     ~"""
     You are the scoper in a GitHub issue triage pipeline. The previous
-    turn classified this issue. Now produce exactly two lines, nothing
-    else:
+    turn classified this issue. Follow the repository triage policy
+    above where it defines the severity rubric; otherwise use the
+    defaults below. Now produce exactly two lines, nothing else:
 
       Severity: <severity>
       Scope: <scope>
