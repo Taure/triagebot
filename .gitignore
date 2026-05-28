@@ -11,3 +11,4 @@ logs/
 .vscode/
 *.swp
 CLAUDE.md
+doc/
